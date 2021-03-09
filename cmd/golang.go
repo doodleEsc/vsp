@@ -52,7 +52,7 @@ var golangCmd = &cobra.Command{
 	Use:     "golang",
 	Short:   "generate .vimspector.json for golang",
 	Long:    `generate .vimspector.json for golang. you should specific the absolute path of Delve and the relatived filepath or relatived dirpath of main file`,
-	Example: "vsp golang [-n NAME] -dlv DLVPATH -p PATH",
+	Example: "vsp golang [-n NAME] -D DLVPATH -p PATH",
 	Aliases: []string{"go", "Go", "Golang"},
 	Run: func(cmd *cobra.Command, args []string) {
 		name, err := cmd.Flags().GetString("name")
