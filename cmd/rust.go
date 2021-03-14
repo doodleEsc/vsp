@@ -20,40 +20,35 @@ import (
 	"log"
 	"path"
 
+	"html/template"
+
 	"github.com/cinuor/vsp/util"
 	"github.com/spf13/cobra"
-	"html/template"
 )
 
-var gotmpl = `{
-"configurations": {
+var rusttmpl = `{
+  "configurations": {
     "{{ .Name }}": {
-      "adapter": "vscode-go",
+      "adapter": "CodeLLDB",
       "configuration": {
         "request": "launch",
-        "program": "{{ .Program }}",
-        "mode": "debug",
-        "dlvToolPath": "{{ .Delve }}",
-        "trace": true,
-        "env": { "GO111MODULE": "on" }
+        "program": "{{ .Program }}"
       }
     }
   }
 }`
 
-type GolangConfig struct {
+type RustConfig struct {
 	Name    string
 	Program string
-	Delve   string
 }
 
-// golangCmd represents the golang command
-var golangCmd = &cobra.Command{
-	Use:     "golang",
-	Short:   "generate .vimspector.json for golang",
-	Long:    `generate .vimspector.json for golang. you should specific the absolute path of Delve and the relatived filepath or relatived dirpath of main file`,
-	Example: "vsp golang [-n NAME] -D DLVPATH -p PATH",
-	Aliases: []string{"go", "Go", "Golang"},
+// rustCmd represents the rust command
+var rustCmd = &cobra.Command{
+	Use:     "rust",
+	Short:   "generate .vimspector.json for rust",
+	Long:    `generate .vimspector.json for rust. you should specific the relatived filepath of target debug binaryfile`,
+	Example: "vsp rust [-n NAME] -p PATH",
 	Run: func(cmd *cobra.Command, args []string) {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
@@ -63,25 +58,21 @@ var golangCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("error occurred: %s", err.Error())
 		}
-		delve, err := cmd.Flags().GetString("delve")
-		if err != nil {
-			log.Fatalf("error occurred: %s", err.Error())
-		}
+
 		dryRun, err := cmd.Flags().GetBool("dry-run")
 		if err != nil {
 			log.Fatalf("error occurred: %s", err.Error())
 		}
 
-		g := GolangConfig{
+		r := RustConfig{
 			Name:    name,
 			Program: path.Join("${workspaceRoot}", program),
-			Delve:   delve,
 		}
 
 		var data bytes.Buffer
 		tmpl := template.New(name)
-		tmpl.Parse(gotmpl)
-		if err := tmpl.Execute(&data, g); err != nil {
+		tmpl.Parse(rusttmpl)
+		if err := tmpl.Execute(&data, r); err != nil {
 			log.Fatalf("Applying Value to Template Failed: %s", err.Error())
 		}
 
@@ -92,11 +83,10 @@ var golangCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(golangCmd)
+	rootCmd.AddCommand(rustCmd)
 
-	golangCmd.Flags().StringP("name", "n", "golang", "the name of the configuration, default: golang")
-	golangCmd.Flags().StringP("program", "p", "", "specific the MAIN FILE PATH or DIR PATH relatived to the .vimspector.json")
-	golangCmd.Flags().StringP("delve", "D", "", "specific the Delve bin file path")
-	golangCmd.MarkFlagRequired("program")
-	golangCmd.MarkFlagRequired("delve")
+	rustCmd.Flags().StringP("name", "n", "rust", "the name of the configuration, default: rust")
+	rustCmd.Flags().StringP("program", "p", "", "specific the debug target binary relatived to the .vimspector.json")
+	rustCmd.MarkFlagRequired("program")
+
 }
